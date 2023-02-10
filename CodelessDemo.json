@@ -1,0 +1,139 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "workspace": {
+            "type": "string",
+            "defaultValue": ""
+        }
+    },
+    "resources": [
+        {
+            "id": "[concat('/subscriptions/',subscription().subscriptionId,'/resourceGroups/',resourceGroup().name,'/providers/Microsoft.OperationalInsights/workspaces/',parameters('workspace'),'/providers/Microsoft.SecurityInsights/dataConnectors/',guid(subscription().subscriptionId))]",
+            "name": "[concat(parameters('workspace'),'/Microsoft.SecurityInsights/',guid(subscription().subscriptionId))]",
+            "apiVersion": "2021-03-01-preview",
+            "type": "Microsoft.OperationalInsights/workspaces/providers/dataConnectors",
+            "kind": "APIPolling",
+            "properties": {
+                "connectorUiConfig": {
+                    "title": "Gary's Demonstration Connector",
+                    "publisher": "Gary Bushey Enterprises LLC",
+                    "descriptionMarkdown": "This is a *Demonstration* data connector only",
+                    "graphQueriesTableName": "GaryBushey_CL",
+                    "graphQueries": [
+                        {
+                            "metricName": "Total data received",
+                            "legend": "Data Received",
+                            "baseQuery": "{{graphQueriesTableName}}"
+                        }
+                    ],
+                    "sampleQueries": [
+                        {
+                            "description": "Get a total count of entries",
+                            "query": "GaryBushey_CL | count"
+                        },
+                        {
+                            "description": "Show 10 entries",
+                            "query": "GaryBushey_CL | take 10"
+                        }
+                    ],
+                    "dataTypes": [
+                        {
+                            "name": "{{graphQueriesTableName}}",
+                            "lastDataReceivedQuery": "{{graphQueriesTableName}}\n            | summarize Time = max(TimeGenerated)\n            | where isnotempty(Time)"
+                        }
+                    ],
+                    "connectivityCriterias": [
+                        {
+                            "type": "SentinelKindsV2",
+                            "value": [
+                                "APIPolling"
+                            ]
+                        }
+                    ],
+                    "availability": {
+                        "status": 1,
+                        "isPreview": true
+                    },
+                    "permissions": {
+                        "resourceProvider": [
+                            {
+                                "provider": "Microsoft.OperationalInsights/workspaces",
+                                "permissionsDisplayText": "Read and write permissions are required.",
+                                "providerDisplayName": "Workspace",
+                                "scope": "Workspace",
+                                "requiredPermissions": {
+                                    "action": true,
+                                    "write": true,
+                                    "read": true,
+                                    "delete": true
+                                }
+                            }
+                        ],
+                        "customs": [
+                            {
+                                "name": "Obtain API key from Gary Bushey Enterprises LLC",
+                                "description": "You will need to contact your Gary Bushey Enterprises LLC rep to obtain an API key"
+                            }
+                        ]
+                    },
+                    "instructionSteps": [
+                        {
+                            "title": "Connect Gary's Demo Connector to Microsoft Sentine;",
+                            "description": "Provide the Gary Bushey Enterprises LLC API key",
+                            "instructions": [
+                                {
+                                    "parameters": {
+                                        "enable": "true",
+                                        "userRequestPlaceHoldersInput": [
+                                            {
+                                                "displayText": "gabid",
+                                                "requestObjectKey": "queryParametersTemplate",
+                                                "placeHolderName": "{{gabidPlaceHolder}}"
+                                            }
+                                        ]
+                                    },
+                                    "type": "APIKey"
+                                }
+                            ]
+                        }
+                    ]
+                },
+                "pollingConfig": {
+                    "owner": "ASI",
+                    "version": "2.0",
+                    "source": "PaaS",
+                    "auth": {
+                        "authType": "APIKey",
+                        "APIKeyName": "provhash",
+                        "IsAPIKeyInPostPayload": true
+                    },
+                    "request": {
+                        "apiEndpoint": "endpoint URL of the API - update all parameters below as needed including paging type based on the API. This is an example only. For info on properties refer to https://docs.microsoft.com/azure/sentinel/create-codeless-connector?tabs=deploy-via-arm-template%2Cconnect-via-the-azure-portal",
+                        "rateLimitQPS": 2,
+                        "httpMethod": "Post",
+                        "queryTimeFormat": "yyyy-MM-ddTHH:mm:ssZ",
+                        "retryCount": 3,
+                        "queryWindowInMin": 10,
+                        "timeoutInSeconds": 120,
+                        "queryParametersTemplate": "{'cid': '12537091', 'cmd': 'reporting', 'data': { 'from': '{_QueryWindowStartTime}', 'to': '{_QueryWindowEndTime}' }, '{_APIKeyName}': '{_APIKey}'}",
+                        "isPostPayloadJson": true
+                    },
+                    "response": {
+                        "eventsJsonPaths": [
+                            "$.data"
+                        ],
+                        "successStatusJsonPath": "$.status",
+                        "successStatusValue": "OK",
+                        "convertChildPropertiesToArray": true
+                    },
+                    "paging": {
+                        "pagingType": "NextPageToken",
+                        "nextPageParaName": "next",
+                        "nextPageTokenJsonPath": "$.next"
+                    }
+                }
+            }
+        }
+    ]
+}
